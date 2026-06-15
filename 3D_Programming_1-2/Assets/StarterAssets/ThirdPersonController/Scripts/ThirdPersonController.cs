@@ -393,5 +393,54 @@ namespace StarterAssets
 
             }
         }
+
+
+
+        // ------ 플레이어가 주체가 되어 처리하는 충돌 감지 시스템 (2D 오디오로 수정) ------
+        private void OnTriggerEnter(Collider other)
+        {
+            // 1. 만약 내가 부딪힌 물체의 태그가 "Item" 이라면 (아이템 획득)
+            if (other.CompareTag("Item"))
+            {
+                ScoreItem item = other.GetComponent<ScoreItem>();
+                if (item != null)
+                {
+                    // [개선] 3D 공간이 아니라 메인 카메라(플레이어 귀) 위치에서 즉시 2D로 소리를 터뜨립니다.
+                    if (item.coinSound != null && Camera.main != null)
+                    {
+                        AudioSource.PlayClipAtPoint(item.coinSound, Camera.main.transform.position, 1.0f);
+                    }
+
+                    // 게임 매니저에게 점수 추가 요청
+                    GameManager.Instance.AddScore(item.scoreValue);
+                }
+
+                // 상대방(코인) 파괴
+                Destroy(other.gameObject);
+            }
+
+            // 2. 만약 내가 부딪힌 물체의 태그가 "Death" 라면 (장애물 충돌)
+            else if (other.CompareTag("Death"))
+            {
+                GameManager.Instance.TriggerGameOver("사망했습니다!");
+            }
+        }
+        // ---------------------------------------------------------------------
+        // ---------------------------------------------------------------------
+
+        // ------ 점프대 발판에서 호출할 함수 추가 ------
+        public void LaunchFromPad(float launchForce)
+        {
+            // 1. 플레이어의 수직 속도를 위쪽 방향 힘으로 강제 교체합니다.
+            _verticalVelocity = launchForce;
+
+            // 2. 플레이어가 공중에 뜬 상태로 애니메이션이 자연스럽게 연결되도록 점프 상태를 강제 활성화합니다.
+            if (_animator != null)
+            {
+                _animator.SetBool(_animIDJump, true);
+                _animator.SetBool(_animIDFreeFall, false);
+            }
+        }
+        // --------------------------------------------
     }
 }
